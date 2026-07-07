@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String
 from app.core.database import Base
 
 
@@ -16,4 +16,5 @@ class Cliente(Base):
     ciudad = Column(String(100))
     provincia = Column(String(100))
     codigo_postal = Column(String(20))
-    estado = Column(String(20), default="ACTIVO")
+
+    activo = Column(Boolean, default=True, nullable=False)

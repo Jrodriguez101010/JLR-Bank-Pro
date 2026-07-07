@@ -14,7 +14,7 @@ class ClientesWindow:
 
         self.ventana = tk.Toplevel(parent) if parent else tk.Tk()
 
-        self.ventana.title("Clientes")
+        self.ventana.title("Administración de Clientes")
         self.ventana.geometry("1100x650")
         self.ventana.resizable(False, False)
 
@@ -49,11 +49,10 @@ class ClientesWindow:
             padx=10
         )
 
-        tk.Button(
-            frame_busqueda,
-            text="Buscar",
-            command=self.buscar
-        ).pack(side="left")
+        self.txt_buscar.bind(
+            "<KeyRelease>",
+            lambda e: self.buscar()
+        )
 
         columnas = (
             "id",
@@ -78,7 +77,7 @@ class ClientesWindow:
         self.tabla.column("apellido", width=180)
         self.tabla.column("nombre", width=180)
         self.tabla.column("dni", width=120)
-        self.tabla.column("telefono", width=120)
+        self.tabla.column("telefono", width=140)
         self.tabla.column("email", width=260)
 
         self.tabla.pack(
@@ -88,12 +87,16 @@ class ClientesWindow:
             pady=20
         )
 
-        frame_botones = tk.Frame(self.ventana)
+        self.tabla.bind(
+            "<Double-1>",
+            lambda e: self.editar()
+        )
 
-        frame_botones.pack(pady=10)
+        botones = tk.Frame(self.ventana)
+        botones.pack(pady=10)
 
         tk.Button(
-            frame_botones,
+            botones,
             text="Nuevo",
             width=15,
             bg="#198754",
@@ -102,18 +105,34 @@ class ClientesWindow:
         ).grid(row=0, column=0, padx=5)
 
         tk.Button(
-            frame_botones,
-            text="Actualizar",
+            botones,
+            text="Editar",
             width=15,
-            command=self.cargar_clientes
+            command=self.editar
         ).grid(row=0, column=1, padx=5)
 
         tk.Button(
-            frame_botones,
+            botones,
+            text="Eliminar",
+            width=15,
+            bg="#dc3545",
+            fg="white",
+            command=self.eliminar
+        ).grid(row=0, column=2, padx=5)
+
+        tk.Button(
+            botones,
+            text="Actualizar",
+            width=15,
+            command=self.cargar_clientes
+        ).grid(row=0, column=3, padx=5)
+
+        tk.Button(
+            botones,
             text="Cerrar",
             width=15,
             command=self.cerrar
-        ).grid(row=0, column=2, padx=5)
+        ).grid(row=0, column=4, padx=5)
 
     def cargar_clientes(self):
 
@@ -138,14 +157,14 @@ class ClientesWindow:
 
     def buscar(self):
 
-        texto = self.txt_buscar.get()
+        texto = self.txt_buscar.get().strip()
 
         self.tabla.delete(*self.tabla.get_children())
 
-        clientes = ClienteService.buscar(
-            self.db,
-            texto
-        )
+        if texto:
+            clientes = ClienteService.buscar(self.db, texto)
+        else:
+            clientes = ClienteService.listar(self.db)
 
         for c in clientes:
 
@@ -162,13 +181,86 @@ class ClientesWindow:
                 )
             )
 
+    def obtener_id_seleccionado(self):
+
+        seleccion = self.tabla.selection()
+
+        if not seleccion:
+
+            messagebox.showwarning(
+                "Clientes",
+                "Seleccione un cliente."
+            )
+
+            return None
+
+        return int(
+            self.tabla.item(
+                seleccion[0]
+            )["values"][0]
+        )
+
     def nuevo(self):
 
-        ClienteForm(self.ventana)
+        formulario = ClienteForm(self.ventana)
 
-        self.ventana.wait_window()
+        self.ventana.wait_window(
+            formulario.ventana
+        )
 
         self.cargar_clientes()
+
+    def editar(self):
+
+        cliente_id = self.obtener_id_seleccionado()
+
+        if cliente_id is None:
+            return
+
+        formulario = ClienteForm(
+            self.ventana,
+            cliente_id
+        )
+
+        self.ventana.wait_window(
+            formulario.ventana
+        )
+
+        self.cargar_clientes()
+
+    def eliminar(self):
+
+        cliente_id = self.obtener_id_seleccionado()
+
+        if cliente_id is None:
+            return
+
+        if not messagebox.askyesno(
+            "Confirmar",
+            "¿Desea desactivar este cliente?"
+        ):
+            return
+
+        try:
+
+            ClienteService.eliminar(
+                self.db,
+                cliente_id
+            )
+
+            self.cargar_clientes()
+
+            messagebox.showinfo(
+                "Clientes",
+                "Cliente desactivado correctamente."
+            )
+
+        except ValueError as e:
+
+            messagebox.showerror(
+                "Error",
+                str(e)
+            )
 
     def cerrar(self):
 
