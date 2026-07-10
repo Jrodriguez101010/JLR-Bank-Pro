@@ -1,51 +1,24 @@
-from app.core.database import SessionLocal, Base, engine
+from app.core.database import Base, engine
 
+# Importar todos los modelos para que SQLAlchemy cree las tablas
 from app.models.empresa import Empresa
 from app.models.usuario import Usuario
+from app.models.cliente import Cliente
 
-from app.services.empresa_service import EmpresaService
-from app.services.usuario_service import UsuarioService
+from app.ui.clientes.clientes_window import ClientesWindow
 
-# Crear tablas
+
+# Crear tablas si no existen
 Base.metadata.create_all(bind=engine)
 
 
 def main():
-    db = SessionLocal()
+    print("===================================")
+    print("      JLR BANK PRO - Versión 0.2")
+    print("===================================")
 
-    try:
-        print("🚀 PROBANDO SISTEMA")
-
-        # EMPRESA
-        empresa = EmpresaService.crear_empresa(db, {
-            "razon_social": "Tech SA",
-            "nombre_fantasia": "Tech",
-            "cuit": "20123456789",
-            "direccion": "Buenos Aires",
-            "localidad": "CABA",
-            "provincia": "Buenos Aires",
-            "telefono": "123456",
-            "email": "tech@empresa.com",
-            "activa": True
-        })
-
-        print("✅ Empresa creada:", empresa.id)
-
-        # USUARIO
-        usuario = UsuarioService.crear_usuario(db, {
-            "nombre": "José",
-            "apellido": "Rodríguez",
-            "usuario": "jrodriguez",
-            "password": "123456",
-            "email": "jose@test.com",
-            "rol": "Administrador",
-            "activo": True
-        })
-
-        print("✅ Usuario creado:", usuario.id)
-
-    finally:
-        db.close()
+    app = ClientesWindow()
+    app.ventana.mainloop()
 
 
 if __name__ == "__main__":
