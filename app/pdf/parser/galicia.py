@@ -3,14 +3,14 @@ import re
 
 class ParserGalicia:
 
-    @staticmethod
-    def extraer_movimientos(texto):
+    PATRON_FECHA = re.compile(r"^\d{2}/\d{2}/\d{2}")
+    PATRON_NUMERO = re.compile(r"-?\d{1,3}(?:\.\d{3})*,\d{2}-?")
+
+    @classmethod
+    def extraer_movimientos(cls, texto):
 
         movimientos = []
-
-        lineas = texto.split("\n")
-
-        patron_fecha = re.compile(r"^\d{2}/\d{2}/\d{2}")
+        lineas = [l.rstrip() for l in texto.splitlines()]
 
         i = 0
 
@@ -18,56 +18,77 @@ class ParserGalicia:
 
             linea = lineas[i].strip()
 
-            if patron_fecha.match(linea):
-
-                movimiento = ParserGalicia._leer_movimiento(lineas, i)
-
-                if movimiento:
-
-                    movimientos.append(movimiento)
-
+            if not cls.PATRON_FECHA.match(linea):
                 i += 1
                 continue
 
-            i += 1
+            bloque = [linea]
+
+            j = i + 1
+
+            while j < len(lineas):
+
+                siguiente = lineas[j].strip()
+
+                if cls.PATRON_FECHA.match(siguiente):
+                    break
+
+                if siguiente:
+                    bloque.append(siguiente)
+
+                j += 1
+
+            movimiento = cls._parsear_bloque(bloque)
+
+            if movimiento:
+                movimientos.append(movimiento)
+
+            i = j
 
         return movimientos
 
-    @staticmethod
-    def _leer_movimiento(lineas, indice):
+    @classmethod
+    def _parsear_bloque(cls, bloque):
 
-        linea = lineas[indice].strip()
+        texto = " ".join(bloque)
 
-        partes = linea.split()
+        partes = texto.split()
 
-        if len(partes) < 3:
+        if len(partes) < 2:
             return None
 
         fecha = partes[0]
 
-        descripcion = linea[len(fecha):].strip()
+        numeros = cls.PATRON_NUMERO.findall(texto)
+
+        if len(numeros) < 2:
+            return None
+
+        saldo = cls._a_float(numeros[-1])
 
         credito = 0.0
         debito = 0.0
-        saldo = 0.0
-
-        numeros = re.findall(r"-?\d{1,3}(?:\.\d{3})*,\d{2}-?", linea)
 
         if len(numeros) == 2:
 
-            importe = ParserGalicia._a_float(numeros[0])
-            saldo = ParserGalicia._a_float(numeros[1])
+            importe = cls._a_float(numeros[0])
 
             if importe >= 0:
                 credito = importe
             else:
                 debito = abs(importe)
 
-        elif len(numeros) >= 3:
+        else:
 
-            credito = ParserGalicia._a_float(numeros[-3])
-            debito = ParserGalicia._a_float(numeros[-2])
-            saldo = ParserGalicia._a_float(numeros[-1])
+            credito = cls._a_float(numeros[-3])
+            debito = cls._a_float(numeros[-2])
+
+        descripcion = texto[len(fecha):]
+
+        for numero in numeros:
+            descripcion = descripcion.replace(numero, "")
+
+        descripcion = " ".join(descripcion.split())
 
         return {
             "fecha": fecha,
@@ -80,15 +101,7 @@ class ParserGalicia:
     @staticmethod
     def _a_float(valor):
 
-        negativo = False
-
-        valor = valor.strip()
-
-        if valor.startswith("-"):
-            negativo = True
-
-        if valor.endswith("-"):
-            negativo = True
+        negativo = valor.startswith("-") or valor.endswith("-")
 
         valor = valor.replace("-", "")
         valor = valor.replace(".", "")
@@ -96,7 +109,7 @@ class ParserGalicia:
 
         try:
             numero = float(valor)
-        except:
+        except ValueError:
             numero = 0.0
 
         if negativo:

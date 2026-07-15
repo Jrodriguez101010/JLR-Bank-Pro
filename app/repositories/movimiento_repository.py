@@ -1,4 +1,4 @@
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 from app.models.movimiento import Movimiento
 
@@ -28,7 +28,9 @@ class MovimientoRepository:
     def listar_por_cuenta(db, cuenta_id):
         return (
             db.query(Movimiento)
-            .filter(Movimiento.cuenta_id == cuenta_id)
+            .filter(
+                Movimiento.cuenta_id == cuenta_id
+            )
             .order_by(
                 Movimiento.fecha.desc(),
                 Movimiento.id.desc()
@@ -57,10 +59,34 @@ class MovimientoRepository:
         )
 
     @staticmethod
+    def existe(
+        db,
+        cuenta_id,
+        fecha,
+        descripcion,
+        importe
+    ):
+
+        return (
+            db.query(Movimiento)
+            .filter(
+                and_(
+                    Movimiento.cuenta_id == cuenta_id,
+                    Movimiento.fecha == fecha,
+                    Movimiento.descripcion == descripcion,
+                    Movimiento.importe == importe
+                )
+            )
+            .first()
+        )
+
+    @staticmethod
     def crear(db, movimiento):
 
         db.add(movimiento)
+
         db.commit()
+
         db.refresh(movimiento)
 
         return movimiento
@@ -69,12 +95,50 @@ class MovimientoRepository:
     def actualizar(db, movimiento):
 
         db.commit()
+
         db.refresh(movimiento)
 
         return movimiento
 
     @staticmethod
-    def eliminar(db, movimiento):
+    def eliminar(db, movimiento_id):
 
-        db.delete(movimiento)
-        db.commit()
+        movimiento = (
+            db.query(Movimiento)
+            .filter(
+                Movimiento.id == movimiento_id
+            )
+            .first()
+        )
+
+        if movimiento:
+
+            db.delete(movimiento)
+
+            db.commit()
+
+            return True
+
+        return False
+
+    @staticmethod
+    def contar(db):
+
+        return (
+            db.query(Movimiento)
+            .count()
+        )
+
+    @staticmethod
+    def contar_por_cuenta(
+        db,
+        cuenta_id
+    ):
+
+        return (
+            db.query(Movimiento)
+            .filter(
+                Movimiento.cuenta_id == cuenta_id
+            )
+            .count()
+        )

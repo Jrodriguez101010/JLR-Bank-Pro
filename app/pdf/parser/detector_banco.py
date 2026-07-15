@@ -5,44 +5,52 @@ class DetectorBanco:
 
         texto = texto.upper()
 
-        # ---------- GALICIA ----------
-        if (
-            "BANCO GALICIA" in texto
-            or "GALICIA" in texto
-            or "RESUMEN DE CUENTA CORRIENTE EN PESOS" in texto
-            or "N° 000" in texto
-            or "CUENTA CORRIENTE EN PESOS" in texto
-        ):
-            return "GALICIA"
+        bancos = {
 
-        # ---------- SANTANDER ----------
-        if (
-            "BANCO SANTANDER" in texto
-            or "SANTANDER" in texto
-        ):
-            return "SANTANDER"
+            "GALICIA": [
+                "BANCO GALICIA",
+                "GALICIA",
+                "RESUMEN DE CUENTA CORRIENTE",
+                "CUENTA CORRIENTE EN PESOS",
+                "BANCO DE GALICIA"
+            ],
 
-        # ---------- BBVA ----------
-        if (
-            "BBVA" in texto
-            or "BANCO BBVA" in texto
-            or "BBVA ARGENTINA" in texto
-        ):
-            return "BBVA"
+            "SANTANDER": [
+                "BANCO SANTANDER",
+                "SANTANDER RIO",
+                "SANTANDER"
+            ],
 
-        # ---------- MACRO ----------
-        if (
-            "BANCO MACRO" in texto
-            or "MACRO" in texto
-        ):
-            return "MACRO"
+            "BBVA": [
+                "BBVA",
+                "BANCO BBVA",
+                "BBVA ARGENTINA",
+                "BANCO FRANCES"
+            ],
 
-        # ---------- NACION ----------
-        if (
-            "BANCO DE LA NACION ARGENTINA" in texto
-            or "BANCO DE LA NACIÓN ARGENTINA" in texto
-            or "BANCO NACION" in texto
-        ):
-            return "NACION"
+            "MACRO": [
+                "BANCO MACRO",
+                "MACRO"
+            ],
+
+            "CREDICOOP": [
+                "CREDICOOP",
+                "BANCO CREDICOOP"
+            ],
+
+            "NACION": [
+                "BANCO DE LA NACION ARGENTINA",
+                "BANCO DE LA NACIÓN ARGENTINA",
+                "BANCO NACION",
+                "BNA"
+            ]
+        }
+
+        for banco, palabras in bancos.items():
+
+            for palabra in palabras:
+
+                if palabra in texto:
+                    return banco
 
         return "DESCONOCIDO"
